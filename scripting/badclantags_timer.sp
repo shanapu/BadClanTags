@@ -5,6 +5,8 @@
  * 
  * Copyright (C) 2017 Thomas Schmidt (shanapu)
  *
+ * This file is part of the MyJailbreak SourceMod Plugin.
+ *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU General Public License, version 3.0, as published by the
  * Free Software Foundation.
@@ -37,7 +39,7 @@ public Plugin myinfo =
 	name = "Bad Clan Tags",
 	description = "Auto remove a bad player tag and set an alternate",
 	author = "shanapu",
-	version = "1.0.0",
+	version = "1.0.2",
 	url = "https://github.com/shanapu/BadClanTags"
 }
 
@@ -47,8 +49,8 @@ public void OnPluginStart()
 	gc_bPlugin = CreateConVar("sm_badtag_enable", "1", "0 - disabled, 1 - enable", _, true, 0.0, true, 1.0);
 	gc_sAlterTag = CreateConVar("sm_badtag_alter", "BAD CLAN TAG", "Set your alternative clan tag");
 
-	HookEvent("player_spawn", Event_Spawn);
 	HookConVarChange(gc_sAlterTag, OnSettingChanged);
+	CreateTimer(1.0, Timer_CheckClanTag);
 }
 
 public void OnSettingChanged(Handle convar, const char[] oldValue, const char[] newValue)
@@ -59,23 +61,6 @@ public void OnSettingChanged(Handle convar, const char[] oldValue, const char[] 
 	}
 }
 
-public void Event_Spawn(Event event, char[] name, bool dontBroadcast)
-{
-	int client = GetClientOfUserId(event.GetInt("userid"));
-
-	CreateTimer(0.1, Timer_DelayCheck, client);
-}
-
-public void OnClientPutInServer(int client)
-{
-	CreateTimer(5.0, Timer_DelayCheck, client);
-}
-
-public void OnClientSettingsChanged(int client)
-{
-	CreateTimer(0.1, Timer_DelayCheck, client);
-}
-
 public void OnConfigsExecuted()
 {
 	gc_sAlterTag.GetString(g_sAlterTag, sizeof(g_sAlterTag));
@@ -83,11 +68,14 @@ public void OnConfigsExecuted()
 	GetBadTags();
 }
 
-public Action Timer_DelayCheck(Handle timer, int client)
+public Action Timer_CheckClanTag(Handle timer)
 {
-	if (IsClientInGame(client))
+	for (int i = 1; i <= MaxClients; i++)
 	{
-		CheckClanTag(client);
+		if (IsClientInGame(i))
+			continue;
+
+		CheckClanTag(i);
 	}
 }
 
